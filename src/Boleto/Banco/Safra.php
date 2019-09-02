@@ -109,6 +109,24 @@ class Safra  extends AbstractBoleto implements BoletoContract
             . "2";
     }
     
+    /**
+     * Método onde qualquer boleto deve extender para gerar o código da posição de 20 a 44
+     *
+     * @param $campoLivre
+     *
+     * @return array
+     */
+    public static function parseCampoLivre($campoLivre) {
+        return [
+            'convenio' => null,
+            'agenciaDv' => null,
+            'codigoCliente' => null,
+            'agencia' => substr($campoLivre, 0, 5),
+            'contaCorrente' => substr($campoLivre, 5, 9),
+            'nossoNumero' => substr($campoLivre, 9, 9)
+        ];
+    }
+
     public function getAceite(): string {
         if (parent::getAceite() == 'S' || parent::getAceite() == 'SIM') {
             return 'SIM';
