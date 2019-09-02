@@ -90,7 +90,7 @@ class UtilTest extends TestCase
         $this->assertEquals('0000123400', Util::formatCnab('9', '1234', 10, 2));
         $this->assertEquals('ABC       ', Util::formatCnab('X', 'ABC', 10));
 
-        $this->setExpectedException(\Exception::class);
+        $this->expectException(\Exception::class);
         Util::formatCnab('J', '123', 10);
     }
 
@@ -108,8 +108,8 @@ class UtilTest extends TestCase
 
     public function testNumeros() {
 
-        $this->assertEquals('', Util::nFloat('ABC'));
-        $this->assertEquals('', Util::nFloat(null));
+        $this->assertEquals(0, Util::nFloat('ABC'));
+        $this->assertEquals(0, Util::nFloat(null));
         $this->assertEquals('1000.00', Util::nFloat(1000));
         $this->assertEquals('1000.000', Util::nFloat(1000, 3));
         $this->assertEquals('1,000.000', Util::nFloat(1000, 3, true));

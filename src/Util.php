@@ -2,6 +2,8 @@
 namespace Eduardokum\LaravelBoleto;
 
 use Carbon\Carbon;
+use Illuminate\Http\UploadedFile;
+use Eduardokum\LaravelBoleto\Contracts\Boleto\Boleto as BoletoContract;
 
 /**
  * Class Util
@@ -80,7 +82,7 @@ final class Util
         '479' => 'Banco ItaúBank S.A',
         'M09' => 'Banco Itaucred Financiamentos S.A.',
         '376' => 'Banco J. P. Morgan S.A.',
-        '074' => 'Banco J. Safra S.A.',
+        '074' => 'Banco J. 074 S.A.',
         '217' => 'Banco John Deere S.A.',
         '600' => 'Banco Luso Brasileiro S.A.',
         '389' => 'Banco Mercantil do Brasil S.A.',
@@ -97,7 +99,7 @@ final class Util
         'M16' => 'Banco Rodobens S.A.',
         '072' => 'Banco Rural Mais S.A.',
         '453' => 'Banco Rural S.A.',
-        '422' => 'Banco Safra S.A.',
+        '422' => 'Banco 422 S.A.',
         '033' => 'Banco Santander (Brasil) S.A.',
         '749' => 'Banco Simples S.A.',
         '366' => 'Banco Société Générale Brasil S.A.',
@@ -313,9 +315,9 @@ final class Util
             'ñ' => 'n', 'ó' => 'o', 'ò' => 'o', 'ô' => 'o', 'õ' => 'o', 'ö' => 'o', 'ø' => 'o',
             'ú' => 'u', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ý' => 'y', 'ŕ' => 'r', 'ÿ' => 'y',
 
-            'ß' => 'sz', 'þ' => 'thorn',
+            'ß' => 'sz', 'þ' => 'thorn', 'º' => '', 'ª' => '', '°' => '',
         );
-        return strtr($string, $normalizeChars);
+        return preg_replace('/[^0-9a-zA-Z !*\-$\(\)\[\]\{\},.;:\/\\#%&@+=]/', '', strtr($string, $normalizeChars));
     }
 
     /**
@@ -328,8 +330,8 @@ final class Util
      */
     public static function nFloat($number, $decimals = 2, $showThousands = false)
     {
-        if (is_null($number) || empty(self::onlyNumbers($number))) {
-            return '';
+        if (is_null($number) || empty(self::onlyNumbers($number)) || floatval($number) == 0) {
+            return 0;
         }
         $pontuacao = preg_replace('/[0-9]/', '', $number);
         $locale = (mb_substr($pontuacao, -1, 1) == ',') ? "pt-BR" : "en-US";
@@ -370,15 +372,12 @@ final class Util
             }
         }
         $formater->setAttribute(\NumberFormatter::MAX_FRACTION_DIGITS, $decimals);
-        if (!$symbol) {
-            $pattern = preg_replace("/[¤]/", '', $formater->getPattern());
-            $formater->setPattern($pattern);
-        } else {
-            // ESPAÇO DEPOIS DO SIMBOLO
-            $pattern = str_replace("¤", "¤ ", $formater->getPattern());
-            $formater->setPattern($pattern);
+        $pattern = substr($formater->getPattern(), strpos($formater->getPattern(), '#'));
+        if ($symbol) {
+            $pattern = "¤ " . $pattern;
         }
-        return $formater->formatCurrency($number, $formater->getTextAttribute(\NumberFormatter::CURRENCY_CODE));
+        $formater->setPattern($pattern);
+        return trim($formater->formatCurrency($number, $formater->getTextAttribute(\NumberFormatter::CURRENCY_CODE)));
     }
 
     /**
@@ -472,6 +471,7 @@ final class Util
     public static function formatCnab($tipo, $valor, $tamanho, $dec = 0, $sFill = '')
     {
         $tipo = self::upper($tipo);
+        $valor = self::upper(self::normalizeChars($valor));
         if (in_array($tipo, array('9', 9, 'N', '9L', 'NL'))) {
             if ($tipo == '9L' || $tipo == 'NL') {
                 $valor = self::onlyNumbers($valor);
@@ -484,7 +484,6 @@ final class Util
         } elseif (in_array($tipo, array('A', 'X'))) {
             $left = '-';
             $type = 's';
-            $valor = self::upper(self::normalizeChars($valor));
         } else {
             throw new \Exception('Tipo inválido');
         }
@@ -542,7 +541,7 @@ final class Util
     {
         $sum = 0;
         for ($i = mb_strlen($n); $i > 0; $i--) {
-            $sum += mb_substr($n, $i - 1, 1)*$factor;
+            $sum += ((int) mb_substr($n, $i - 1, 1))*$factor;
             if ($factor == $base) {
                 $factor = 1;
             }
@@ -611,7 +610,7 @@ final class Util
     public static function controle2array($controle)
     {
         $matches = '';
-        $matches_founded = '';
+        $matches_founded = [];
         preg_match_all('/(([A-Za-zÀ-Úà-ú]+)([0-9]*))/', $controle, $matches, PREG_SET_ORDER);
         if ($matches) {
             foreach ($matches as $match) {
@@ -703,7 +702,7 @@ final class Util
             case Contracts\Boleto\Boleto::COD_BANCO_BB:
                 if (self::remove(1, 1, $detalhe) != 7) {
                     unset($retorno[$i]);
-                    continue;
+                    continue 2;
                 }
                 self::adiciona($retorno[$i], 1, 1, '7');
                 self::adiciona($retorno[$i], 64, 80, self::remove(64, 80, $detalhe));
@@ -767,7 +766,7 @@ final class Util
     public static function remove($i, $f, &$array)
     {
         if (is_string($array)) {
-            $array = str_split(rtrim($array, chr(10) . chr(13) . "\n" . "\r"), 1);
+            $array = preg_split('//u', rtrim($array, chr(10) . chr(13) . "\n" . "\r"), null, PREG_SPLIT_NO_EMPTY);
         }
 
         $i--;
@@ -784,7 +783,11 @@ final class Util
 
         $toSplice = $array;
 
-        return trim(implode('', array_splice($toSplice, $i, $t)));
+        if($toSplice != null) {
+            return trim(implode('', array_splice($toSplice, $i, $t)));
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -817,7 +820,7 @@ final class Util
         }
 
         $value = sprintf("%{$t}s", $value);
-        $value = preg_split('//u', $value, -1, PREG_SPLIT_NO_EMPTY);
+        $value = preg_split('//u', $value, -1, PREG_SPLIT_NO_EMPTY) + array_fill(0, $t, '');
 
         return array_splice($line, $i, $t, $value);
     }
@@ -853,19 +856,23 @@ final class Util
      */
     public static function file2array($file)
     {
-        if (is_array($file) && isset($file[0]) && is_string($file[0])) {
-            return $file;
+        $aFile = [];
+        if ($file instanceof UploadedFile) {
+            $aFile = file($file->getRealPath());
+        } elseif (is_array($file) && isset($file[0]) && is_string($file[0])) {
+            $aFile = $file;
         } elseif (is_string($file) && is_file($file) && file_exists($file)) {
-            return file($file);
+            $aFile = file($file);
         } elseif (is_string($file) && strstr($file, PHP_EOL) !== false) {
             $file_content = explode(PHP_EOL, $file);
             if (empty(end($file_content))) {
                 array_pop($file_content);
             }
             reset($file_content);
-            return $file_content;
+            $aFile = $file_content;
         }
-        return false;
+
+        return array_map('\ForceUTF8\Encoding::toUTF8', $aFile);
     }
 
     /**
@@ -907,6 +914,85 @@ final class Util
     }
 
     /**
+     * @param $ipte
+     *
+     * @return string
+     */
+    public static function IPTE2CodigoBarras($ipte)
+    {
+        $ipte = self::onlyNumbers($ipte);
+
+        $barras = substr($ipte, 0, 4);
+        $barras .= substr($ipte, 32, 1) ;
+        $barras .= substr($ipte, 33, 14) ;
+        $barras .= substr($ipte, 4,1) ;
+        $barras .= substr($ipte, 5, 4) ;
+        $barras .= substr($ipte, 10, 10) ;
+        $barras .= substr($ipte, 21, 8) ;
+        $barras .= substr($ipte, 29, 2);
+
+        return $barras;
+    }
+
+    /**
+     * @param $ipte
+     *
+     * @return array
+     * @throws \Exception
+     */
+    public static function IPTE2Variveis($ipte)
+    {
+        $barras = self::IPTE2CodigoBarras($ipte);
+
+        $variaveis = [
+            'barras' => $barras,
+            'banco' => substr($barras, 0, 3),
+            'moeda' => substr($barras, 3, 1),
+            'dv' => substr($barras, 4, 1),
+            'fator_vencimento' => substr($barras, 5, 4),
+            'vencimento' => self::fatorVencimentoBack(substr($barras, 5, 4), false),
+            'valor' => ((float) substr($barras, 9, 10)) / 100,
+            'campo_livre' => substr($barras, -25),
+        ];
+        $class = __NAMESPACE__ . '\\Boleto\\' . self::getBancoClass($variaveis['banco']);
+        if (method_exists($class, 'parseCampoLivre')) {
+            $variaveis['campo_livre_parsed'] = $class::parseCampoLivre($variaveis['campo_livre']);
+        } else {
+            $variaveis['campo_livre_parsed'] = false;
+        }
+
+        return $variaveis;
+    }
+
+    /**
+     * @param $banco
+     *
+     * @return string
+     * @throws \Exception
+     */
+    public static function getBancoClass($banco) {
+
+        $aBancos = [
+            BoletoContract::COD_BANCO_BB => 'Banco\\Bb',
+            BoletoContract::COD_BANCO_SANTANDER => 'Banco\\Santander',
+            BoletoContract::COD_BANCO_CEF => 'Banco\\Caixa',
+            BoletoContract::COD_BANCO_BRADESCO => 'Banco\\Bradesco',
+            BoletoContract::COD_BANCO_ITAU => 'Banco\\Itau',
+            BoletoContract::COD_BANCO_HSBC => 'Banco\\Hsbc',
+            BoletoContract::COD_BANCO_SICREDI => 'Banco\\Sicredi',
+            BoletoContract::COD_BANCO_BANRISUL => 'Banco\\Banrisul',
+            BoletoContract::COD_BANCO_BANCOOB => 'Banco\\Bancoob',
+            BoletoContract::COD_BANCO_BNB => 'Banco\\Bnb',
+        ];
+
+        if (array_key_exists($banco, $aBancos)) {
+            return $aBancos[$banco];
+        }
+
+        throw new \Exception("Banco: $banco, inválido");
+    }
+
+    /**
      * @param $property
      * @param $obj
      *
@@ -924,5 +1010,18 @@ final class Util
             return $obj;
         }
         throw new \Exception('Objeto inválido, somente Pessoa e Array');
+    }
+
+    /**
+     * @return string
+     */
+    public static function appendStrings()
+    {
+        $strings = func_get_args();
+        $appended = null;
+        foreach ($strings as $string) {
+            $appended .= " $string";
+        }
+        return trim($appended);
     }
 }
