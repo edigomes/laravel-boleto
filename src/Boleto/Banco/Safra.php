@@ -6,7 +6,7 @@ use Eduardokum\LaravelBoleto\CalculoDV;
 use Eduardokum\LaravelBoleto\Contracts\Boleto\Boleto as BoletoContract;
 use Eduardokum\LaravelBoleto\Util;
 
-class Safra extends AbstractBoleto implements BoletoContract
+class Safra  extends AbstractBoleto implements BoletoContract
 {
 
     /**
@@ -109,6 +109,13 @@ class Safra extends AbstractBoleto implements BoletoContract
             . "2";
     }
     
+    /**
+     * Método onde qualquer boleto deve extender para gerar o código da posição de 20 a 44
+     *
+     * @param $campoLivre
+     *
+     * @return array
+     */
     public static function parseCampoLivre($campoLivre) {
         return [
             'convenio' => null,
@@ -119,7 +126,7 @@ class Safra extends AbstractBoleto implements BoletoContract
             'nossoNumero' => substr($campoLivre, 9, 9)
         ];
     }
-    
+
     public function getAceite(): string {
         if (parent::getAceite() == 'S' || parent::getAceite() == 'SIM') {
             return 'SIM';
