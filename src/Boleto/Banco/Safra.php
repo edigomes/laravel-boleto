@@ -6,7 +6,7 @@ use Eduardokum\LaravelBoleto\CalculoDV;
 use Eduardokum\LaravelBoleto\Contracts\Boleto\Boleto as BoletoContract;
 use Eduardokum\LaravelBoleto\Util;
 
-class Safra  extends AbstractBoleto implements BoletoContract
+class Safra extends AbstractBoleto implements BoletoContract
 {
 
     /**
@@ -107,6 +107,17 @@ class Safra  extends AbstractBoleto implements BoletoContract
             . Util::numberFormatGeral($this->getConta(), 9)
             . Util::numberFormatGeral($this->getNossoNumero(), 9) 
             . "2";
+    }
+    
+    public static function parseCampoLivre($campoLivre) {
+        return [
+            'convenio' => null,
+            'agenciaDv' => null,
+            'codigoCliente' => null,
+            'agencia' => substr($campoLivre, 0, 5),
+            'contaCorrente' => substr($campoLivre, 5, 9),
+            'nossoNumero' => substr($campoLivre, 9, 9)
+        ];
     }
     
     public function getAceite(): string {
