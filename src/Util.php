@@ -99,7 +99,7 @@ final class Util
         'M16' => 'Banco Rodobens S.A.',
         '072' => 'Banco Rural Mais S.A.',
         '453' => 'Banco Rural S.A.',
-        '422' => 'Banco 422 S.A.',
+        '422' => 'Banco Safra S.A.',
         '033' => 'Banco Santander (Brasil) S.A.',
         '749' => 'Banco Simples S.A.',
         '366' => 'Banco Société Générale Brasil S.A.',
@@ -983,6 +983,7 @@ final class Util
             BoletoContract::COD_BANCO_BANRISUL => 'Banco\\Banrisul',
             BoletoContract::COD_BANCO_BANCOOB => 'Banco\\Bancoob',
             BoletoContract::COD_BANCO_BNB => 'Banco\\Bnb',
+            BoletoContract::COD_BANCO_SAFRA => 'Banco\\Safra',
         ];
 
         if (array_key_exists($banco, $aBancos)) {
