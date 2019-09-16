@@ -81,6 +81,7 @@ class Safra  extends AbstractBoleto implements BoletoContract
     {
         return Util::numberFormatGeral($this->getNumero(), 9);
     }
+    
     /**
      * Método que retorna o nosso numero usado no boleto. alguns bancos possuem algumas diferenças.
      *
@@ -89,6 +90,10 @@ class Safra  extends AbstractBoleto implements BoletoContract
     public function getNossoNumeroBoleto()
     {
         return $this->getNossoNumero();
+    }
+    
+    public function getAgencia() {
+        return Util::numberFormatGeral(parent::getAgencia(), 5);
     }
     
     /**
