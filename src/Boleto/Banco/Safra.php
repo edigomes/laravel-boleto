@@ -106,7 +106,7 @@ class Safra  extends AbstractBoleto implements BoletoContract
      */
     public function getConta() 
     {
-        return Util::numberFormatGeral(parent::getConta(), 12);
+        return Util::numberFormatGeral(parent::getConta(), 9);
     }
     
     /**
