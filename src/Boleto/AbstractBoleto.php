@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Eduardokum\LaravelBoleto\Boleto\Render\Html;
 use Eduardokum\LaravelBoleto\Boleto\Render\Pdf;
 use Eduardokum\LaravelBoleto\Boleto\Render\PdfCaixa;
+use Eduardokum\LaravelBoleto\Boleto\Render\PdfRecibo;
 use Eduardokum\LaravelBoleto\Contracts\Boleto\Boleto;
 use Eduardokum\LaravelBoleto\Contracts\Pessoa as PessoaContract;
 use Eduardokum\LaravelBoleto\Contracts\Boleto\Boleto as BoletoContract;
@@ -1514,16 +1515,19 @@ abstract class AbstractBoleto implements BoletoContract
      *
      * @param bool $print
      * @param bool $instrucoes
+     * @param bool $pdfRecibo
      *
      * @return string
      * @throws \Exception
      */
-     public function renderPDF($print = false, $instrucoes = true)
+     public function renderPDF($print = false, $instrucoes = true, $pdfRecibo = false)
     {
         if($this->codigoBanco == 104){
-           $pdf = new PdfCaixa();
-        }else{
-           $pdf = new Pdf();
+            $pdf = new PdfCaixa();
+        } else if ($pdfRecibo) {
+            $pdf = new PdfRecibo();
+        } else {
+            $pdf = new Pdf();
         }
         $pdf->addBoleto($this);
         !$print || $pdf->showPrint();
