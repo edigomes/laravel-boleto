@@ -136,7 +136,7 @@ class Bradesco extends AbstractRemessa implements RemessaContract
         $this->boletos[] = $boleto;
         $this->segmentoP($boleto);
         $this->segmentoQ($boleto);
-        //$this->segmentoR($boleto);
+        $this->segmentoR($boleto);
         if($boleto->getSacadorAvalista()) {
             $this->segmentoY01($boleto);
         }
@@ -261,7 +261,7 @@ class Bradesco extends AbstractRemessa implements RemessaContract
         return $this;
     }
 
-     /**
+    /**
      * @param BoletoContract $boleto
      *
      * @return $this
@@ -292,13 +292,17 @@ class Bradesco extends AbstractRemessa implements RemessaContract
         $this->add(66, 66, $boleto->getMulta() > 0 ? '2' : '0'); //0 = ISENTO | 1 = VALOR FIXO | 2 = PERCENTUAL
         $this->add(67, 74, $boleto->getDataVencimento()->format('dmY'));
         $this->add(75, 89, Util::formatCnab('9', $boleto->getMulta(), 15, 2));  //2,20 = 0000000000220
-        $this->add(90, 199, '');
+        $this->add(90, 99, '');
+        $this->add(100, 139, '');
+        $this->add(140, 179, '');
+        $this->add(180, 199, '');
         $this->add(200, 207, '00000000');
         $this->add(208, 210, '000');
         $this->add(211, 215, '00000');
         $this->add(216, 216, '');
         $this->add(217, 228, '000000000000');
-        $this->add(229, 230, '');
+        $this->add(229, 229, '');
+        $this->add(230, 230, '');
         $this->add(231, 231, '2');  //Não emite Aviso
         $this->add(232, 240, '');
 
