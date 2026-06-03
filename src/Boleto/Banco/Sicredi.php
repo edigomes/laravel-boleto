@@ -107,6 +107,22 @@ class Sicredi extends AbstractBoleto implements BoletoContract
         return $this->registro;
     }
     /**
+     * Normaliza a carteira removendo zeros à esquerda ('01' vira '1') antes
+     * da validação. Sem isso, valores como '01' passariam pelo in_array com
+     * comparação solta mas gerariam '0' na linha digitável (posição 6).
+     *
+     * @param  string $carteira
+     * @return $this
+     * @throws \Exception
+     */
+    public function setCarteira($carteira)
+    {
+        if ($carteira !== null && $carteira !== '') {
+            $carteira = (string) ((int) $carteira);
+        }
+        return parent::setCarteira($carteira);
+    }
+    /**
      * Define o posto do cliente
      *
      * @param  int $posto
